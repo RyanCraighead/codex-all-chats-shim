@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "packageName": "OpenAI.Codex",
+  "packageVersion": "generated-by-setup",
+  "appExeRelativePath": "app\\ChatGPT.exe",
+  "upstreamCliPath": "generated-by-setup",
+  "upstreamCliSha256": "generated-by-setup",
+  "host": "127.0.0.1",
+  "port": 47850,
+  "maxThreads": 10000
+}
