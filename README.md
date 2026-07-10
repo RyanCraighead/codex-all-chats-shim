@@ -89,17 +89,47 @@ npm run test:live  # Read-only smoke test against your local catalog
 
 See [SECURITY.md](SECURITY.md) for the trust model and reporting guidance.
 
-## Version Pinning
+## Codex Updates and Version Pinning
 
-The app-server protocol and renderer behavior are internal implementation details. `config.local.json` pins both the installed package version and the exact CLI SHA-256. If Codex updates, the launcher fails closed instead of guessing.
+### Short answer
 
-Run this again after an update:
+The shim is **not guaranteed to keep working automatically after a Codex update**. It intentionally fails closed until the new build is explicitly detected and tested.
 
-```powershell
-npm run setup
-npm test
-npm run test:live
-```
+`config.local.json` pins both the installed Codex package version and the exact `codex.exe` SHA-256. When Codex updates:
+
+- an already-running Codex session is not modified;
+- the **Codex - All Chats** launcher detects the mismatch and stops before starting an unverified shim;
+- no chat database, rollout, configuration, or application file is changed;
+- the ordinary Codex shortcut remains available and launches Codex without this shim.
+
+### What each command proves
+
+| Command | What it does | What it does not prove |
+| --- | --- | --- |
+| `npm run setup` | Detects the newly installed package, copies its CLI into the user-owned runtime directory, and writes the new version/hash pin. | It does not prove that the new internal protocol or renderer is compatible. |
+| `npm test` | Tests cursor aggregation, request pass-through, and tokenized WebSocket access against the included app-server simulator. | It does not communicate with the installed Codex build. |
+| `npm run test:live -- -RestartShim` | Runs a read-only catalog and `thread/read` smoke test against the newly installed real app-server. | It does not prove that the desktop renderer still consumes the expanded catalog. |
+| `npm run launch` | Launches the normal installed app through the verified app-server path. | The final sidebar check is visual and must be confirmed in the app. |
+
+### Required update procedure
+
+After Codex updates:
+
+1. Close Codex.
+2. Run the compatibility sequence:
+
+   ```powershell
+   npm run setup
+   npm test
+   npm run test:live -- -RestartShim
+   npm run launch
+   ```
+
+3. In Codex, confirm that a previously old/missing project displays its tasks and that one of those tasks opens normally.
+
+If any command fails, do not use the **Codex - All Chats** shortcut for that version. The regular Codex shortcut is unaffected. Report the installed package version and the relevant files from `logs/` so the shim can be updated.
+
+A code update may be required if Codex changes or removes `CODEX_APP_SERVER_WS_URL`, changes the `thread/list` protocol, or changes how the renderer builds its lightweight task catalog.
 
 ## Troubleshooting
 
@@ -109,7 +139,7 @@ Logs are written under `logs/`:
 - `launcher.log`
 - `queue.log`
 
-If the desktop shortcut does nothing, inspect `logs/launcher.log`. A version mismatch means setup must be rerun and the new build retested.
+If the desktop shortcut does nothing, inspect `logs/launcher.log`. A version mismatch means the full update procedure above must be completed; rerunning setup alone is not sufficient validation.
 
 ## Status
 
