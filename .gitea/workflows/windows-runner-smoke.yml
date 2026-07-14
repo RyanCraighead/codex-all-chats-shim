@@ -1,0 +1,32 @@
+name: Windows runner smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  smoke:
+    runs-on: windows-11-codex
+    steps:
+      - name: Check host tools
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Host "OS: $([System.Environment]::OSVersion.VersionString)"
+          Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
+          git --version
+          node --version
+          npm --version
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        shell: powershell
+        run: npm ci
+
+      - name: Run unit tests
+        shell: powershell
+        run: npm test
