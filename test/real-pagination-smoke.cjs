@@ -8,7 +8,7 @@ const http = require("node:http");
 const net = require("node:net");
 const os = require("node:os");
 const path = require("node:path");
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const { WebSocket } = require("ws");
 
 const rootDir = path.resolve(__dirname, "..");
@@ -415,11 +415,7 @@ class CandidateAppServer {
       sleep(5_000).then(() => false),
     ]);
     if (!exited && !this.exitResult) {
-      this.child.kill();
-      await Promise.race([
-        new Promise((resolve) => this.child.once("exit", resolve)),
-        sleep(5_000),
-      ]);
+      await stopChild(this.child);
     }
   }
 }
@@ -872,11 +868,43 @@ function openWebSocket(url, timeoutMs) {
 
 async function stopChild(child) {
   if (!child || child.exitCode != null) return;
-  child.kill();
+
+  if (process.platform === "win32" && Number.isInteger(child.pid)) {
+    spawnSync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], {
+      windowsHide: true,
+      stdio: "ignore",
+    });
+  } else {
+    child.kill("SIGKILL");
+  }
+
   await Promise.race([
     new Promise((resolve) => child.once("exit", resolve)),
-    sleep(5_000),
+    sleep(10_000),
   ]);
+}
+
+async function removeFixtureTree(directory) {
+  const deadline = Date.now() + 30_000;
+  let lastError;
+
+  while (Date.now() < deadline) {
+    try {
+      fs.rmSync(directory, {
+        recursive: true,
+        force: true,
+        maxRetries: 5,
+        retryDelay: 250,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (!["EBUSY", "ENOTEMPTY", "EPERM"].includes(error?.code)) throw error;
+      await sleep(500);
+    }
+  }
+
+  throw lastError || new Error(`Timed out removing fixture directory: ${directory}`);
 }
 
 async function verifyShim({
@@ -1147,7 +1175,7 @@ async function run(options) {
   } finally {
     if (fixtureRoot && !options.keepFixture) {
       try {
-        fs.rmSync(fixtureRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+        await removeFixtureTree(fixtureRoot);
       } catch (error) {
         cleanupError = error;
       }

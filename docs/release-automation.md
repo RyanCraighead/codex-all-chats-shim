@@ -69,7 +69,7 @@ Create these as repository-level Actions secrets:
 
 Do not name secrets with a `GITEA_` or `GITHUB_` prefix; Gitea reserves those prefixes.
 
-The automation identity should be a restricted bot with write access to only this repository. It does not need Gitea administrator access. The GitHub key should be a repository deploy key, not a personal SSH key.
+The automation identity should be a restricted bot with write access to only this repository. It does not need Gitea administrator access. Its `must_change_password` flag must be disabled before creating the PAT; otherwise Gitea rejects API and Git authentication even when the token is valid. The GitHub key should be a repository deploy key, not a personal SSH key.
 
 ## Workflows
 
