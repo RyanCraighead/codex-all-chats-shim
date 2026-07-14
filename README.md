@@ -91,59 +91,56 @@ See [SECURITY.md](SECURITY.md) for the trust model and reporting guidance.
 
 ## Codex Updates and Version Pinning
 
-### Short answer
+The shim uses two separate pins with different responsibilities:
 
-The shim is **not assumed to be compatible with an untested Codex update**. It fails closed until the new build is detected and tested. This repository now includes a Gitea-primary release pipeline that performs that process automatically on the dedicated Windows runner.
-
-`config.local.json` pins both the installed Codex package version and the exact `codex.exe` SHA-256. When Codex updates:
-
-- an already-running Codex session is not modified;
-- the **Codex - All Chats** launcher detects the mismatch and stops before starting an unverified shim;
-- no chat database, rollout, configuration, or application file is changed;
-- the ordinary Codex shortcut remains available and launches Codex without this shim.
-
-### What each command proves
-
-| Command | What it does | What it does not prove |
+| Pin | Location | Purpose |
 | --- | --- | --- |
-| `npm run setup` | Detects the newly installed package, copies its CLI into the user-owned runtime directory, and writes the new version/hash pin. | It does not prove that the new internal protocol or renderer is compatible. |
-| `npm test` | Tests cursor aggregation, request pass-through, and tokenized WebSocket access against the included app-server simulator. | It does not communicate with the installed Codex build. |
-| `npm run test:live -- -RestartShim` | Runs a read-only catalog and `thread/read` smoke test against the newly installed real app-server. | It does not prove that the desktop renderer still consumes the expanded catalog. |
-| `npm run launch` | Launches the normal installed app through the verified app-server path. | The final sidebar check is visual and must be confirmed in the app. |
+| Verified compatibility pin | `compatibility/verified-codex.json` in Git | Records the package version and exact `codex.exe` SHA-256 that passed the Gitea Windows validation pipeline. |
+| Local runtime pin | uncommitted `config.local.json` | Records the exact installed package and user-owned CLI copy used by this machine's launcher. |
 
-### Automated update procedure
+The repository pin is the compatibility approval. The local pin prevents the launcher from silently switching to a different executable. Running `npm run setup` refreshes only the local pin; it does **not** prove or publish compatibility.
 
-The canonical Gitea repository runs this sequence every six hours:
+### Automatic release flow
 
-1. Ask the interactive Windows Store task to install or update the official Codex package.
-2. Detect the exact installed package version and `codex.exe` SHA-256.
-3. Create an immutable `automation/codex-candidate/...` branch when that identity is new.
-4. Run repository tests and a real app-server fixture containing 125 local tasks.
-5. Verify direct app-server pagination, shim aggregation, unique task IDs, and `thread/read` without sending a model request.
-6. Fast-forward the verified manifest and compact test evidence into Gitea `main`.
-7. Run a separate Linux job that fast-forwards the exact Gitea `main` commit to GitHub.
+Gitea is the canonical repository and runs the update monitor every six hours:
 
-Failed or stale candidates never update `main`, and GitHub is never used as the source of truth. See [Release automation](docs/release-automation.md) for the architecture, runner setup, secrets, and recovery procedures.
+1. A Windows 11 runner refreshes the official Microsoft Store Codex package.
+2. The monitor records the package version and exact CLI SHA-256.
+3. A new identity creates an immutable `automation/codex-candidate/...` branch.
+4. The candidate runs repository tests plus a real, isolated `codex.exe app-server` fixture containing 125 synthetic local tasks.
+5. Validation checks multi-page `thread/list`, 125 unique task IDs, `thread/read`, and the shim's complete cursor aggregation without making a model request or reading user chats.
+6. A passing candidate is fast-forwarded into Gitea `main` with compact evidence under `compatibility/verification/` and a `codex-verified/...` tag.
+7. A separate Linux workflow fast-forwards that exact Gitea commit to GitHub.
 
-### Manual fallback
+Failed candidates remain available for diagnosis but cannot update Gitea `main`. Stale candidates, non-fast-forward promotions, and a divergent GitHub mirror all fail closed. GitHub receives only builds already verified on Gitea.
 
-If the Gitea infrastructure is unavailable, a local compatibility check can still be performed after Codex updates:
+See [Release automation](docs/release-automation.md) for the runner architecture, workflow details, secrets, and recovery procedures.
 
-1. Close Codex.
-2. Run the compatibility sequence:
+### What happens on a user's machine
 
-   ```powershell
-   npm run setup
-   npm test
-   npm run test:live -- -RestartShim
-   npm run launch
-   ```
+When the Microsoft Store updates Codex, an existing Codex session is left alone. The next **Codex - All Chats** launch compares the installed package with `config.local.json` and stops on a mismatch before starting the shim. It does not modify chats, rollouts, settings, or signed application files, and the ordinary Codex shortcut remains usable.
 
-3. Optionally confirm in Codex that a previously old/missing project displays its tasks and that one of those tasks opens normally.
+After the new identity has been promoted:
 
-This fallback only updates that machine's local pin. It does not promote a verified release to Gitea or GitHub. If any command fails, do not use the **Codex - All Chats** shortcut for that version. The regular Codex shortcut is unaffected.
+```powershell
+git pull --ff-only
+npm run setup
+npm run launch
+```
 
-A code update may be required if Codex changes or removes `CODEX_APP_SERVER_WS_URL`, changes the `thread/list` protocol, or changes how the renderer builds its lightweight task catalog.
+The version and `upstreamCliSha256` written to `config.local.json` should match `compatibility/verified-codex.json`. If they do not match, do not use the shim with that build; wait for or manually dispatch the Gitea monitor.
+
+### Manual validation fallback
+
+If Gitea is unavailable, a local read-only check can provide diagnostic evidence:
+
+```powershell
+npm run setup
+npm test
+npm run test:live -- -RestartShim
+```
+
+This fallback tests only that machine and does not promote a release, update Gitea, or mirror GitHub. It is not equivalent to the automated candidate gate. A code change may still be required if Codex changes `CODEX_APP_SERVER_WS_URL`, the app-server protocol, or the renderer's catalog behavior.
 
 ## Troubleshooting
 
@@ -153,7 +150,7 @@ Logs are written under `logs/`:
 - `launcher.log`
 - `queue.log`
 
-If the desktop shortcut does nothing, inspect `logs/launcher.log`. A version mismatch means the full update procedure above must be completed; rerunning setup alone is not sufficient validation.
+If the desktop shortcut does nothing, inspect `logs/launcher.log`. A version mismatch means the Store package changed. Pull the latest verified repository state first, confirm its package identity matches the installed build, and only then refresh the local pin with `npm run setup`.
 
 ## Status
 
