@@ -1,0 +1,36 @@
+{
+    "schemaVersion":  1,
+    "passed":  true,
+    "packageName":  "OpenAI.Codex",
+    "packageVersion":  "26.707.9564.0",
+    "cliSha256":  "2CAACAD1F7B8B3E9B2527B9BFF9630CFBB30EC25D8D8C018C9D55A2BEC348032",
+    "validatedAtUtc":  "2026-07-14T02:47:54.2275988Z",
+    "fixtureThreadCount":  125,
+    "checks":  {
+                   "directAppServer":  {
+                                           "passed":  true,
+                                           "returnedThreadCount":  125,
+                                           "uniqueThreadCount":  125,
+                                           "pageCount":  2,
+                                           "threadReadPassed":  true,
+                                           "nextCursorIsNull":  true,
+                                           "durationMs":  null
+                                       },
+                   "shim":  {
+                                "passed":  true,
+                                "returnedThreadCount":  125,
+                                "uniqueThreadCount":  125,
+                                "pageCount":  2,
+                                "threadReadPassed":  null,
+                                "nextCursorIsNull":  true,
+                                "durationMs":  null
+                            }
+               },
+    "source":  {
+                   "baseCommit":  "f19b3f6da9c0cb61a89e234c39ee8f1cecee6069",
+                   "candidateCommit":  "0d06c3586d822289b001b34ce6ae10bafcfbc028",
+                   "candidateBranch":  "automation/codex-candidate/26.707.9564.0-2caacad1-f19b3f6d",
+                   "giteaRunId":  "54",
+                   "giteaRunNumber":  "11"
+               }
+}

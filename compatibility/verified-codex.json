@@ -1,16 +1,36 @@
 {
-  "schemaVersion": 1,
-  "packageName": "OpenAI.Codex",
-  "packageVersion": "26.707.3563.0",
-  "appExeRelativePath": "app\\ChatGPT.exe",
-  "cliRelativePath": "app\\resources\\codex.exe",
-  "cliSha256": "B88F944EF63556527CAAE2AD43F80B88B8BE174DC09B09D9B037FC94240A0E91",
-  "verifiedAtUtc": "2026-07-11T00:00:00Z",
-  "verification": {
-    "provenance": "manual-local",
-    "shimCommit": "a24d23a",
-    "unitTests": true,
-    "liveAppServerSmoke": true,
-    "desktopCatalogConfirmed": true
-  }
+    "schemaVersion":  1,
+    "packageName":  "OpenAI.Codex",
+    "packageFullName":  "OpenAI.Codex_26.707.9564.0_x64__2p2nqsd0c76g0",
+    "packageVersion":  "26.707.9564.0",
+    "appExeRelativePath":  "app\\ChatGPT.exe",
+    "cliRelativePath":  "app\\resources\\codex.exe",
+    "cliSha256":  "2CAACAD1F7B8B3E9B2527B9BFF9630CFBB30EC25D8D8C018C9D55A2BEC348032",
+    "verifiedAtUtc":  "2026-07-14T02:47:54.2275988Z",
+    "verification":  {
+                         "provenance":  "gitea-windows-automation",
+                         "baseCommit":  "f19b3f6da9c0cb61a89e234c39ee8f1cecee6069",
+                         "candidateCommit":  "0d06c3586d822289b001b34ce6ae10bafcfbc028",
+                         "candidateBranch":  "automation/codex-candidate/26.707.9564.0-2caacad1-f19b3f6d",
+                         "evidencePath":  "compatibility/verification/26.707.9564.0-2caacad1.json",
+                         "fixtureThreadCount":  125,
+                         "directAppServer":  {
+                                                 "passed":  true,
+                                                 "returnedThreadCount":  125,
+                                                 "uniqueThreadCount":  125,
+                                                 "pageCount":  2,
+                                                 "threadReadPassed":  true,
+                                                 "nextCursorIsNull":  true,
+                                                 "durationMs":  null
+                                             },
+                         "shim":  {
+                                      "passed":  true,
+                                      "returnedThreadCount":  125,
+                                      "uniqueThreadCount":  125,
+                                      "pageCount":  2,
+                                      "threadReadPassed":  null,
+                                      "nextCursorIsNull":  true,
+                                      "durationMs":  null
+                                  }
+                     }
 }
