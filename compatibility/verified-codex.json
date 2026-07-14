@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "packageName": "OpenAI.Codex",
+  "packageVersion": "26.707.3563.0",
+  "appExeRelativePath": "app\\ChatGPT.exe",
+  "cliRelativePath": "app\\resources\\codex.exe",
+  "cliSha256": "B88F944EF63556527CAAE2AD43F80B88B8BE174DC09B09D9B037FC94240A0E91",
+  "verifiedAtUtc": "2026-07-11T00:00:00Z",
+  "verification": {
+    "provenance": "manual-local",
+    "shimCommit": "a24d23a",
+    "unitTests": true,
+    "liveAppServerSmoke": true,
+    "desktopCatalogConfirmed": true
+  }
+}

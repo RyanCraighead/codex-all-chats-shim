@@ -1,0 +1,45 @@
+name: Monitor Codex desktop updates
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: windows-11-codex
+    steps:
+      - name: Checkout canonical Gitea main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.AUTOMATION_TOKEN }}
+
+      - name: Refresh official Store package
+        shell: powershell
+        run: .\scripts\ci\invoke-store-refresh-task.ps1
+
+      - name: Detect installed Codex candidate
+        id: candidate
+        shell: powershell
+        env:
+          CODEX_CI_CACHE_ROOT: C:\ProgramData\CodexShimCI\candidates
+        run: |
+          $ErrorActionPreference = "Stop"
+          git fetch origin main --prune
+          $base = (git rev-parse origin/main).Trim()
+          .\scripts\ci\detect-codex-candidate.ps1 `
+            -AllUsers `
+            -BaseCommit $base `
+            -CandidateOutputPath "$env:RUNNER_TEMP\codex-candidate.json"
+
+      - name: Create auditable candidate branch
+        if: steps.candidate.outputs.changed == 'true'
+        shell: powershell
+        run: |
+          .\scripts\ci\create-candidate-branch.ps1 `
+            -CandidatePath "${{ steps.candidate.outputs.candidate_path }}"
+
+      - name: Record current verified state
+        shell: powershell
+        run: Get-Content .\compatibility\verified-codex.json

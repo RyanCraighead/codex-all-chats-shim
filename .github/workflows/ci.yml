@@ -17,13 +17,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: node --check src/catalog-shim.cjs
+      - run: npm run check
       - name: Parse PowerShell scripts
         shell: pwsh
         run: |
           $failed = $false
-          Get-ChildItem scripts -Filter *.ps1 | ForEach-Object {
+          Get-ChildItem scripts -Recurse -Filter *.ps1 | ForEach-Object {
             $tokens = $null
             $errors = $null
             [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null

@@ -1,0 +1,64 @@
+name: Validate and promote Codex candidate
+
+on:
+  push:
+    branches:
+      - "automation/codex-candidate/**"
+
+jobs:
+  validate:
+    runs-on: windows-11-codex
+    steps:
+      - name: Checkout immutable candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.AUTOMATION_TOKEN }}
+
+      - name: Install dependencies
+        shell: powershell
+        run: npm ci
+
+      - name: Run repository tests
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          npm run check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $failed = $false
+          Get-ChildItem scripts -Recurse -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName,
+              [ref]$tokens,
+              [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              $errors | ForEach-Object { Write-Error "$($_.Extent.File): $($_.Message)" }
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Validate real app-server and shim pagination
+        shell: powershell
+        env:
+          CODEX_CI_CACHE_ROOT: C:\ProgramData\CodexShimCI\candidates
+        run: |
+          .\scripts\ci\validate-codex-candidate.ps1 `
+            -CandidatePath .\compatibility\candidate.json `
+            -ReportPath "$env:RUNNER_TEMP\codex-validation.json"
+
+      - name: Promote the verified candidate to Gitea main
+        shell: powershell
+        env:
+          GITEA_RUN_ID: ${{ gitea.run_id }}
+          GITEA_RUN_NUMBER: ${{ gitea.run_number }}
+          GITEA_SERVER_URL: ${{ gitea.server_url }}
+          GITEA_REPOSITORY: ${{ gitea.repository }}
+        run: |
+          .\scripts\ci\promote-verified-candidate.ps1 `
+            -CandidatePath .\compatibility\candidate.json `
+            -ValidationReportPath "$env:RUNNER_TEMP\codex-validation.json"

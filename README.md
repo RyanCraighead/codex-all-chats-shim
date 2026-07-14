@@ -93,7 +93,7 @@ See [SECURITY.md](SECURITY.md) for the trust model and reporting guidance.
 
 ### Short answer
 
-The shim is **not guaranteed to keep working automatically after a Codex update**. It intentionally fails closed until the new build is explicitly detected and tested.
+The shim is **not assumed to be compatible with an untested Codex update**. It fails closed until the new build is detected and tested. This repository now includes a Gitea-primary release pipeline that performs that process automatically on the dedicated Windows runner.
 
 `config.local.json` pins both the installed Codex package version and the exact `codex.exe` SHA-256. When Codex updates:
 
@@ -111,9 +111,23 @@ The shim is **not guaranteed to keep working automatically after a Codex update*
 | `npm run test:live -- -RestartShim` | Runs a read-only catalog and `thread/read` smoke test against the newly installed real app-server. | It does not prove that the desktop renderer still consumes the expanded catalog. |
 | `npm run launch` | Launches the normal installed app through the verified app-server path. | The final sidebar check is visual and must be confirmed in the app. |
 
-### Required update procedure
+### Automated update procedure
 
-After Codex updates:
+The canonical Gitea repository runs this sequence every six hours:
+
+1. Ask the interactive Windows Store task to install or update the official Codex package.
+2. Detect the exact installed package version and `codex.exe` SHA-256.
+3. Create an immutable `automation/codex-candidate/...` branch when that identity is new.
+4. Run repository tests and a real app-server fixture containing 125 local tasks.
+5. Verify direct app-server pagination, shim aggregation, unique task IDs, and `thread/read` without sending a model request.
+6. Fast-forward the verified manifest and compact test evidence into Gitea `main`.
+7. Run a separate Linux job that fast-forwards the exact Gitea `main` commit to GitHub.
+
+Failed or stale candidates never update `main`, and GitHub is never used as the source of truth. See [Release automation](docs/release-automation.md) for the architecture, runner setup, secrets, and recovery procedures.
+
+### Manual fallback
+
+If the Gitea infrastructure is unavailable, a local compatibility check can still be performed after Codex updates:
 
 1. Close Codex.
 2. Run the compatibility sequence:
@@ -125,9 +139,9 @@ After Codex updates:
    npm run launch
    ```
 
-3. In Codex, confirm that a previously old/missing project displays its tasks and that one of those tasks opens normally.
+3. Optionally confirm in Codex that a previously old/missing project displays its tasks and that one of those tasks opens normally.
 
-If any command fails, do not use the **Codex - All Chats** shortcut for that version. The regular Codex shortcut is unaffected. Report the installed package version and the relevant files from `logs/` so the shim can be updated.
+This fallback only updates that machine's local pin. It does not promote a verified release to Gitea or GitHub. If any command fails, do not use the **Codex - All Chats** shortcut for that version. The regular Codex shortcut is unaffected.
 
 A code update may be required if Codex changes or removes `CODEX_APP_SERVER_WS_URL`, changes the `thread/list` protocol, or changes how the renderer builds its lightweight task catalog.
 

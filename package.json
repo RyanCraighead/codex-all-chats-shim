@@ -24,9 +24,11 @@
     "queue": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/queue-relaunch.ps1",
     "shortcut": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/create-shortcut.ps1",
     "shim": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/start-shim.ps1",
-    "test": "node --test test/shim.test.cjs",
+    "test": "node --test test/shim.test.cjs && node test/real-pagination-smoke.cjs --self-test",
     "test:live": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/smoke-test.ps1",
-    "check": "node --check src/catalog-shim.cjs && node --test test/shim.test.cjs"
+    "test:candidate": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/ci/validate-codex-candidate.ps1",
+    "test:pipeline": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File test/release-pipeline-smoke.ps1",
+    "check": "node --check src/catalog-shim.cjs && node --check test/real-pagination-smoke.cjs && npm test && npm run test:pipeline"
   },
   "dependencies": {
     "ws": "8.21.0"

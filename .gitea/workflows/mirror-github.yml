@@ -1,0 +1,41 @@
+name: Mirror canonical main to GitHub
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout canonical Gitea main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure GitHub deploy key
+        shell: bash
+        env:
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
+          MIRROR_KNOWN_HOSTS: ${{ secrets.MIRROR_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$MIRROR_SSH_KEY"
+          test -n "$MIRROR_KNOWN_HOSTS"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$MIRROR_SSH_KEY" > "$HOME/.ssh/codex-shim-mirror"
+          printf '%s\n' "$MIRROR_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/codex-shim-mirror" "$HOME/.ssh/known_hosts"
+
+      - name: Push exact Gitea main commit to GitHub
+        shell: bash
+        env:
+          GIT_SSH_COMMAND: ssh -i ~/.ssh/codex-shim-mirror -o IdentitiesOnly=yes
+        run: |
+          set -euo pipefail
+          git remote add github git@github.com:RyanCraighead/codex-all-chats-shim.git
+          git fetch github main
+          git merge-base --is-ancestor github/main origin/main
+          git push github refs/remotes/origin/main:refs/heads/main
