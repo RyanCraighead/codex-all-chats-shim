@@ -1,5 +1,8 @@
 # Codex All Chats Shim
 
+> [!WARNING]
+> **This project is retired and this repository is archived.** Active development has moved to [Codex Patch Studio](https://github.com/RyanCraighead/codex-patch-studio-current). This repository is retained as historical reference and receives no maintenance, compatibility updates, or support. As of July 18, 2026, the successor repository requires authorized collaborator access and is not publicly accessible.
+
 Load the complete local task catalog in the normal, installed Codex desktop app without modifying its signed files or using a separate Electron profile.
 
 ## What It Does
